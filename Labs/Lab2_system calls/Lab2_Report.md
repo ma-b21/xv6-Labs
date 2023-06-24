@@ -4,7 +4,7 @@
 
 执行backtrace后结果如下：
 
-![backtrace result](image.png)
+![backtrace result](image/image.png)
 
 由图可知是函数`usertrap()`调用了`syscall()`函数.
 
@@ -12,30 +12,30 @@
 
 首先输入两次n之后执行结果如下：
 
-![after type n](image-1.png)
+![after type n](image/image-1.png)
 
 语句`struct proc *p = myproc()`执行完毕，接着执行`p/x *p`看p的内容如下：
 
-![after *p](image-2.png)
+![after *p](image/image-2.png)
 
 此时查看`p->trapframe->a7`的值：
 
-![p->trapframe->a7](image-3.png)
+![p->trapframe->a7](image/image-3.png)
 
 得到`a7`的值为`7`。
 根据`user/initcode.S`以及参考书第二章内容可知寄存器`a7`保存了系统将要执行的系统调用号，这里的系统调用号为`7`,由`kernel/syscall.h`的内容（下图）可知系统调用为`SYS_exec`。
 
-![SYScall](image-4.png)
+![SYScall](image/image-4.png)
 
 > Q3:What was the previous mode that the CPU was in?
 
 在gdb中输入`p /x $sstatus`得到如下结果：
 
-![sstatus](image-5.png)
+![sstatus](image/image-5.png)
 
 其值转换为二进制为：`0b100010`,在参考书[RISC-V privileged instructions](https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf)中找到sstatus的值定义如下：
 
-![sstatus_bit](image-6.png)
+![sstatus_bit](image/image-6.png)
 
 同时对于其`SPP`位有描述如下：
 
@@ -50,15 +50,15 @@
 
 首先按照指导将`kernel/syscall.c`中`syscall`函数中的`num = p->trapframe->a7`改为`num = * (int *) 0`,接着执行`make qemu`得到如下输出：
 
-![panic](image-9.png)
+![panic](image/image-9.png)
 
 在`kernel/kernel.asm`中查找上图中的`sepc`值，得到结果如下图：
 
-![assemblely](image-10.png)
+![assemblely](image/image-10.png)
 
 对应的汇编指令为`lw a3,0(zero)`,由参考书[RISC-V Assembly Language](https://web.eecs.utk.edu/~smarz1/courses/ece356/notes/assembly/),
 
-![lw](image-11.png)
+![lw](image/image-11.png)
 
 这条汇编代码代表：将内存中地址从`0`开始的一个字`word(2bytes)`大小的数据加载到寄存器`a3`中。
 
@@ -67,36 +67,36 @@ description of scause in RISC-V privileged instructions)
 
 首先按照实验要求在上文`panic`的代码处打上断点并继续执行，结果如下：
 
-![breakpoint](image-12.png)
+![breakpoint](image/image-12.png)
 
 此时再次输入`n`并执行会引起内核`panic`,如下：
 
-![n](image-13.png)
-![panic](image-14.png)
+![n](image/image-13.png)
+![panic](image/image-14.png)
 
 使用`Ctrl+C`来退出当前线程并打印`scause`的值如下：
 
-![scause](image-15.png)
+![scause](image/image-15.png)
 
 接着开始分析：首先根据参考书[book-riscv-rev3](https://pdos.csail.mit.edu/6.828/2022/xv6/book-riscv-rev3.pdf)中的`Figure 3.3`(如下图)，
 
-![F](image-16.png)
+![F](image/image-16.png)
 
 内核地址空间基地址为`0x80000000`,因此代码中的数据地址`0`不映射到内核地址空间中，因此内核会崩溃。
 
 而`scause`的值为13，在参考书[RISC-V Assembly Language](https://web.eecs.utk.edu/~smarz1/courses/ece356/notes/assembly/)的`Table 8.6`(如下图)中可以查到代码`13`对应`Load page fault`，验证了结论。
 
-![Table 8.6](image-17.png)
+![Table 8.6](image/image-17.png)
 
 > Q6:What is the name of the binary that was running when the kernel paniced? What is its process id (pid)? 
 
 首先重启`qemu`和`gdb`执行如下命令:
 
-![name](image-18.png)
+![name](image/image-18.png)
 
 为了获得进程`pid`,执行如下命令：
 
-![pid](image-20.png)
+![pid](image/image-20.png)
 
 因此
 
@@ -130,10 +130,10 @@ description of scause in RISC-V privileged instructions)
     {
       int mask;
       argint(0, &mask); // 从系统调用中获得参数mask
-
+    
       struct proc* p = myproc();
       p->mask = mask; // 将当前进程的mask值设为获取的参数
-  
+    
       return 0;
     }
     ```
@@ -143,10 +143,10 @@ description of scause in RISC-V privileged instructions)
     fork(void){
       ...
       np->sz = p->sz;
-
+    
       // 复制trace mask值到子进程
       np->mask = p->mask;
-
+    
       // copy saved user registers.
       *(np->trapframe) = *(p->trapframe);
       ...
@@ -209,7 +209,7 @@ description of scause in RISC-V privileged instructions)
           // Use num to lookup the system call function for num, call it,
           // and store its return value in p->trapframe->a0
           p->trapframe->a0 = syscalls[num]();
-
+      
           if((p->mask >> num) & 0b1){ // 如果mask的值译码后等于该系统调用的系统调用号，则打印相关信息
             printf("%d: %s -> %d\n", p->pid, syscall_names[num], p->trapframe->a0);
           }
@@ -222,6 +222,7 @@ description of scause in RISC-V privileged instructions)
       ```
       上述改动中内层条件判断的语句就是将`mask`进行解码，然后与1作比较，若相等则输出该系统调用.
       
+
 经过以上对内核的修改，成功实现了系统调用`trace`.
 
 ## sysinfo
@@ -250,14 +251,14 @@ description of scause in RISC-V privileged instructions)
       ```c
       ...
       extern uint64 sys_info(void);
-
+      
       // An array mapping syscall numbers from syscall.h
       // to the function that handles the system call.
       static uint64 (*syscalls[])(void) = {
       ...
       [SYS_sysinfo]    sys_info,
       };
-
+      
       // 用来在打印trace函数运行结果时输出系统调用名称
       static char* syscall_names[] = {
         ...
@@ -316,7 +317,7 @@ description of scause in RISC-V privileged instructions)
         // 根据Hints参考kernel/file.c/filestate()使用copy函数将info复制到用户空间
         if(copyout(p->pagetable, u_addr, (char*)(&info), sizeof(info)) < 0)
           return -1;
-
+      
         return 0;
       }
       ```
@@ -324,4 +325,4 @@ description of scause in RISC-V privileged instructions)
 ## 参考链接
 - [xv6-labs-2022 Lab2 system call 详解](https://www.chens.life/posts/mit-xv6-lab2/)
 - [MIT6.s081-2020 操作系统入门 Lab2 System Calls](https://zhuanlan.zhihu.com/p/407169754#Sysinfo)
-- ![Alt text](image-21.png)
+- ![Alt text](image/image-21.png)
