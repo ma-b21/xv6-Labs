@@ -1,0 +1,9 @@
+Q1: Which other xv6 system call(s) could be made faster using this shared page? Explain how. 
+
+A: 系统调用sys_sbrk也可以用此页来加速，因为该函数返回的是myproc()->sz,因此我们可以将myproc()->sz也在进程初始化的时候存在该页中，就像存进程的pid一样，用同样的原理可以加速此系统调用。
+
+Q2: Explain the output of vmprint in terms of Fig 3-4 from the text. What does page 0 contain? What is in page 2? When running in user mode, could the process read/write the memory mapped by page 1? What does the third to last page contain? 
+
+A: page 0包含代码段和数据段，即text和data;
+   page 1是guard page, page 2是stack，page 1的PTE_U = 0，所以用户态不可访问。
+   第三到最后一页就是剩余的heap,unused,trapframe,trampoline.

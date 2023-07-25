@@ -1,0 +1,143 @@
+<html>
+<head>
+<title>Lab guidance</title>
+<link rel="stylesheet" href="labs.css" type="text/css" />
+</head>
+<body>
+  
+<h1>Lab guidance</h1>
+
+<h2>Hardness of assignments</h2>
+  
+<p>Each assignment indicates how difficult it is:
+  <ul>
+    <li><p><span class="easy">Easy</span>: less than an
+    hour. These exercise are typically often warm-up exercises for
+    subsequent exercises.</li>
+    <li><p><span class="moderate">Moderate</span>: 1-2 hours.</li>
+    <li><p><span class="hard">Hard</span>: More than 2 hours. Often these
+    exercises don't require much code, but the code is tricky to get
+    right.</li>
+  </ul>
+  These times are rough estimates of our expectations.
+  
+<p>The exercises in general require not many lines of code (tens to a
+few hundred lines), but the code is conceptually complicated and often
+details matter a lot.  So, make sure you do the assigned reading for
+the labs, read the relevant files through, consult the documentation
+(the RISC-V manuals etc.)
+before you write any code. Only when you have a firm grasp of the
+assignment and solution, then start coding.  When you start coding,
+implement your solution in small steps (the assignments often suggest
+how to break the problem down in smaller steps) and test whether each
+steps works before proceeding to the next one.
+
+<h2>Debugging tips</h2>
+
+Here are some tips for debugging your solutions:
+<ul>
+  
+  <li><p>Make sure you understand C and pointers.  The book "The C
+  programming language (second edition)" by Kernighan and Ritchie is a
+  succinct description of C.  Some useful pointer exercises are
+    <a href="https://pdos.csail.mit.edu/6.828/2019/lec/pointers.c">here</a>.
+Unless you are already thoroughly versed in C, do not skip or skim the
+pointer exercises above.  If you do not really understand pointers in
+C, you will suffer untold pain and misery in the labs, and then
+eventually come to understand them the hard way.  Trust us; you don't
+want to find out what "the hard way" is.
+    
+  <p>A few pointer common idioms are in particular worth remembering:
+<ul>
+<li>If <code>int *p = (int*)100</code>, then 
+    <code>(int)p + 1</code> and <code>(int)(p + 1)</code>
+    are different numbers: the first is <code>101</code> but
+    the second is <code>104</code>.
+    When adding an integer to a pointer, as in the second case,
+    the integer is implicitly multiplied by the size of the object
+    the pointer points to.</li>
+
+<li><code>p[i]</code> is defined to be the same as <code>*(p+i)</code>,
+referring to the i'th object in the memory pointed to by p.
+The above rule for addition helps this definition work
+when the objects are larger than one byte.</li>
+<li> <code>&amp;p[i]</code> is the same as <code>(p+i)</code>, yielding
+the address of the i'th object in the memory pointed to by p.</li>
+</ul>
+
+<p>
+Although most C programs never need to cast between pointers and integers,
+operating systems frequently do.
+Whenever you see an addition involving a memory address,
+ask yourself whether it is an integer addition or pointer addition
+and make sure the value being added is appropriately multiplied
+or not.
+  </li>
+
+  <li><p>If you fail a test, make sure you understand why your code fails
+  the test.  Insert print statements until you understand what is
+    going on.</li>
+
+  <li><p>You may find that your print statements may produce much output
+  that you would like to search through; one way to do that is to run
+  <tt>make qemu</tt> inside of <tt>script</tt> (run <kbd>man
+  script</kbd> on your machine), which logs all console output to a
+  file, which you can then search.  Don't forget to
+  exit <tt>script</tt>.
+  </li>
+
+
+  <li><p>In many cases, print statements will be sufficient, but
+  sometimes being able to single step through some assembly code or
+  inspecting the variables on the stack is helpful.  To use gdb with
+  xv6, run make <kbd>make qemu-gdb</kbd> in one window,
+  run <kbd>gdb-multiarch</kbd> (or <kbd>riscv64-linux-gnu-gdb</kbd>) in another
+  window, set a break point, followed by followed by 'c' (continue),
+  and xv6 will run until it hits the
+  breakpoint. See <a href="https://pdos.csail.mit.edu/6.828/2019/lec/gdb_slides.pdf">Using
+	the GNU Debugger</a> for helpful GDB tips.  (If you start gdb and see a warning of the form 'warning: File ".../.gdbinit" auto-loading has been declined', edit ~/.gdbinit to add "add-auto-load-safe-path...", as suggested by the warning.)
+  </li>
+  
+  <li><p>If you want to see what the assembly is that the compiler
+  generates for the kernel or to find out what the instruction is at
+  a particular kernel address, see the file <tt>kernel.asm</tt>, which
+  the Makefile produces when it compiles the kernel.  (The Makefile
+  also produces <tt>.asm</tt> for all user programs.)
+  </li>
+  
+  <li><p>If the kernel panics, it will print an error message listing the
+  value of the program counter when it crashed; you can
+  search <tt>kernel.asm</tt> to find out in which function the program
+  counter was when it crashed, or you can run <kbd>addr2line -e
+  kernel/kernel <i>pc-value</i></kbd> (run <kbd>man addr2line</kbd>
+  for details).  If you want to get backtrace, restart using gdb: run
+  'make qemu-gdb' in one window, run gdb (or riscv64-linux-gnu-gdb) in
+  another window, set breakpoint in panic ('b panic'), followed by
+  followed by 'c' (continue). When the kernel hits the break point,
+  type 'bt' to get a backtrace.
+  </li>
+
+  <li><p>If your kernel hangs (e.g., due to a deadlock) or cannot execute
+  further (e.g., due to a page fault when executing a kernel
+  instruction), you can use gdb to find out where it is hanging. Run
+  run 'make qemu-gdb' in one window, run gdb (riscv64-linux-gnu-gdb)
+  in another window, followed by followed by 'c' (continue). When the
+  kernel appears to hang hit Ctrl-C in the qemu-gdb window and type
+  'bt' to get a backtrace.
+  </li>
+
+  <li><tt>qemu</tt> has a "monitor" that lets you query the state
+  of the emulated machine. You can get at it by typing
+  control-a c (the "c" is for console). A particularly useful
+  monitor command is <tt>info mem</tt> to print the page table.
+  You may need to use the <tt>cpu</tt> command to select which
+  core <tt>info mem</tt> looks at, or you could start qemu
+  with <tt>make CPUS=1 qemu</tt> to cause there to be just one core.
+
+</ul>
+
+It is well worth the time learning the above-mentioned tools.
+    
+</body>
+</html>
+
